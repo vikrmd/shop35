@@ -1,159 +1,71 @@
-import datetime
-import json
-import numpy as np
-import requests
-import pandas as pd
 import streamlit as st
-from copy import deepcopy
+import numpy as np
+import pandas as pd
+from openpyxl import load_workbook
+import time
+import SessionState
 
-# faking chrome browser
-browser_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36'}
+session_state = SessionState.get(cart_log = '')
 
-st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
+def main():
+    st.markdown(""" <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style> """, unsafe_allow_html=True)
 
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
-def load_mapping():
-    df = pd.read_csv("district_mapping.csv")
-    return df
+    st.sidebar.header('Order Creation')
+    st.sidebar.info('Order creation is automated based on products selected')
 
-def filter_column(df, col, value):
-    df_temp = deepcopy(df.loc[df[col] == value, :])
-    return df_temp
+    st.title('Y V I K')
+    st.spinner()
+    with st.spinner(text='In progress'):
+        time.sleep(5)
+        st.success('Page loaded successfully')
 
-def filter_capacity(df, col, value):
-    df_temp = deepcopy(df.loc[df[col] > value, :])
-    return df_temp
+    wb = load_workbook('productlog.xlsx')
+    sheet = wb.active
+    max_row = sheet.max_row
+
+    product_type = []
+
+    for j in range(1, max_row):
+        if sheet.cell(row=j+1, column=6).value not in product_type:
+            product_type.append(sheet.cell(row=j+1, column=6).value)
+
+    prod_typ = st.multiselect("Product Type: ",
+                             product_type)
+
+    # write the selected options
+    if len(prod_typ) == 0:
+        st.warning("Kindly select atleast 1 product type from list to proceed")
+    else:
+        st.info("You selected " + str(len(prod_typ)) + ' Product type(s)')
+
+    load_products(prod_typ)
 
 
-mapping_df = load_mapping()
+def load_products(prod_typ):
 
-mapping_dict = pd.Series(mapping_df["district id"].values,
-                         index = mapping_df["district name"].values).to_dict()
+    wb = load_workbook('productlog.xlsx')
+    sheet = wb.active
+    max_row = sheet.max_row
 
-rename_mapping = {
-    'date': 'Date',
-    'min_age_limit': 'Minimum Age Limit',
-    'available_capacity': 'Available Capacity',
-    'vaccine': 'Vaccine',
-    'pincode': 'Pincode',
-    'name': 'Hospital Name',
-    'state_name' : 'State',
-    'district_name' : 'District',
-    'block_name': 'Block Name',
-    'fee_type' : 'Fees'
-    }
+    for i in range(1,max_row):
+        if sheet.cell(row=i+1, column=6).value in prod_typ:
+            col1, col2 = st.beta_columns([80, 40])
 
-st.title('CoWIN Vaccination Slot Availability')
-st.info('The CoWIN APIs are geo-fenced so sometimes you may not see an output! Please try after sometime ')
+            col1.subheader(sheet.cell(row=i+1, column=2).value)
+            #print(str(sheet.cell(row=i+1, column=1).value).split('/')[-1].strip())
+            col1.image('img_folder/'+ str(sheet.cell(row=i+1, column=1).value).split('/')[-1].strip() +'.png', use_column_width=80)
 
-# numdays = st.sidebar.slider('Select Date Range', 0, 100, 10)
-unique_districts = list(mapping_df["district name"].unique())
-unique_districts.sort()
+            col2.subheader("__Cost :__ Rs." + str(sheet.cell(row=i+1, column=4).value).replace('?',''))
 
-left_column_1, right_column_1 = st.beta_columns(2)
-with left_column_1:
-    numdays = st.slider('Select Date Range', 0, 100, 5)
 
-with right_column_1:
-    dist_inp = st.selectbox('Select District', unique_districts)
+            st.markdown("""<hr>""", unsafe_allow_html=True)
+            if col2.button('Add to Cart', key = i):
+                session_state.cart_log = session_state.cart_log + 'Product added'
+                st.sidebar.text(session_state.cart_log)
 
-DIST_ID = mapping_dict[dist_inp]
 
-base = datetime.datetime.today()
-date_list = [base + datetime.timedelta(days=x) for x in range(numdays)]
-date_str = [x.strftime("%d-%m-%Y") for x in date_list]
-
-final_df = None
-for INP_DATE in date_str:
-    URL = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id={}&date={}".format(DIST_ID, INP_DATE)
-    response = requests.get(URL, headers=browser_header)
-    if (response.ok) and ('centers' in json.loads(response.text)):
-        resp_json = json.loads(response.text)['centers']
-        if resp_json is not None:
-            df = pd.DataFrame(resp_json)
-            if len(df):
-                df = df.explode("sessions")
-                df['min_age_limit'] = df.sessions.apply(lambda x: x['min_age_limit'])
-                df['vaccine'] = df.sessions.apply(lambda x: x['vaccine'])
-                df['available_capacity'] = df.sessions.apply(lambda x: x['available_capacity'])
-                df['date'] = df.sessions.apply(lambda x: x['date'])
-                df = df[["date", "available_capacity", "vaccine", "min_age_limit", "pincode", "name", "state_name", "district_name", "block_name", "fee_type"]]
-                if final_df is not None:
-                    final_df = pd.concat([final_df, df])
-                else:
-                    final_df = deepcopy(df)
-        else:
-            st.error("No rows in the data Extracted from the API")
-#     else:
-#         st.error("Invalid response")
-
-if (final_df is not None) and (len(final_df)):
-    final_df.drop_duplicates(inplace=True)
-    final_df.rename(columns=rename_mapping, inplace=True)
-
-    left_column_2, center_column_2, right_column_2, right_column_2a,  right_column_2b = st.beta_columns(5)
-    with left_column_2:
-        valid_pincodes = list(np.unique(final_df["Pincode"].values))
-        pincode_inp = st.selectbox('Select Pincode', [""] + valid_pincodes)
-        if pincode_inp != "":
-            final_df = filter_column(final_df, "Pincode", pincode_inp)
-
-    with center_column_2:
-        valid_age = [18, 45]
-        age_inp = st.selectbox('Select Minimum Age', [""] + valid_age)
-        if age_inp != "":
-            final_df = filter_column(final_df, "Minimum Age Limit", age_inp)
-
-    with right_column_2:
-        valid_payments = ["Free", "Paid"]
-        pay_inp = st.selectbox('Select Free or Paid', [""] + valid_payments)
-        if pay_inp != "":
-            final_df = filter_column(final_df, "Fees", pay_inp)
-
-    with right_column_2a:
-        valid_capacity = ["Available"]
-        cap_inp = st.selectbox('Select Availablilty', [""] + valid_capacity)
-        if cap_inp != "":
-            final_df = filter_capacity(final_df, "Available Capacity", 0)
-
-    with right_column_2b:
-        valid_vaccines = ["COVISHIELD", "COVAXIN"]
-        vaccine_inp = st.selectbox('Select Vaccine', [""] + valid_vaccines)
-        if vaccine_inp != "":
-            final_df = filter_column(final_df, "Vaccine", vaccine_inp)
-
-    table = deepcopy(final_df)
-    table.reset_index(inplace=True, drop=True)
-    st.table(table)
-else:
-    st.error("Unable to fetch data currently, please try after sometime")
-
-footer="""<style>
-a:link , a:visited{
-color: blue;
-background-color: transparent;
-text-decoration: underline;
-}
-
-a:hover,  a:active {
-color: red;
-background-color: transparent;
-text-decoration: underline;
-}
-
-.footer {
-position: fixed;
-left: 0;
-bottom: 0;
-width: 100%;
-background-color: white;
-color: black;
-text-align: center;
-}
-</style>
-<div class="footer">
-<p>Developed with ❤ by <a style='display: block; text-align: center;' href="https://github.com/bhattbhavesh91" target="_blank">Bhavesh Bhatt</a></p>
-</div>
-"""
-st.markdown(footer,unsafe_allow_html=True)
-# st.markdown("_- Bhavesh Bhatt_")
+if __name__ == "__main__":
+    main()
