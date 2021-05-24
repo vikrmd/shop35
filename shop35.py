@@ -73,7 +73,7 @@ def load_products(prod_typ):
     for i in range(1,max_row):
 
         if sheet.cell(row=i+1, column=6).value in prod_typ:
-            col1, mid, col2 = st.beta_columns([80,30,50])
+            col1, mid, col2 = st.beta_columns([80,20,60])
 
             col1.subheader(sheet.cell(row=i+1, column=2).value)
             prod_code = str(sheet.cell(row=i+1, column=9).value).strip()
