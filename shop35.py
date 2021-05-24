@@ -58,7 +58,6 @@ def main():
         #st.sidebar.info(session_state.t_shirt_arr)
 
 
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
 def load_products(prod_typ):
 
     sarees_loop = []
