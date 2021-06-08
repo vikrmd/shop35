@@ -4,49 +4,7 @@ from random import randint
 import smtplib
 from email.mime.text import MIMEText
 
-
-def verify_user(mob):
-
-    g = github.Github('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')
-    repo = g.get_user().get_repo("baseoca_backoffice")
-    contents = repo.get_contents("contact.csv", ref="main")
-
-    lines = contents.decoded_content.decode("utf-8")
-    data_arr = lines.splitlines()
-    lookup = mob
-
-    for i in range(len(data_arr)):
-        ref_arr = data_arr[i].split(',')
-        if mob == ref_arr[0]:
-            data_arr = lines.splitlines()
-            lookup = mob
-            otp = randint(10000, 99999)
-
-            for i in range(len(data_arr)):
-                ref_arr = data_arr[i].split(',')
-                if ref_arr[0] == lookup:
-                    curr_arr = data_arr[i].split(',')
-                    curr_arr[0] = lookup
-                    curr_arr[1] = otp
-                    curr_arr[2] = 'unverified'
-                    curr_arr[3] = ref_arr[3]
-                    data_arr[i] = str(curr_arr[0]) + ',' + str(curr_arr[1]) + ',' + str(curr_arr[2]) + ',' + str(
-                        curr_arr[3])
-                    break
-
-            updated_data = ''
-            for i in range(len(data_arr)):
-                updated_data = updated_data + data_arr[i] + '\n'
-
-            # print(contents.decoded_content)
-            repo.update_file("mob_name.csv", "update otp activty", updated_data, contents.sha, branch="main")
-
-        else:
-            repo.update_file("mob_name.csv", "update otp activity",
-                             contents.decoded_content.decode("utf-8") + "" + str(mob) + "," + '12345' + ",unverified,0\n",
-                             contents.sha, branch="main")
-
-    return False
+tkn ='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'
 
 
 
@@ -80,8 +38,8 @@ def check_mob_otp(mob, otp):
     :return: None
     '''
 
-    g = github.Github('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')
-    repo = g.get_user().get_repo("baseoca_backoffice")
+    g = github.Github(tkn)
+    repo = g.get_user().get_repo("data_depo")
     contents = repo.get_contents("contact.csv", ref="main")
 
     lookup = mob
@@ -102,8 +60,8 @@ def enter_mob(mob, otp):
     :return: None
     '''
 
-    g = github.Github('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')
-    repo = g.get_user().get_repo("baseoca_backoffice")
+    g = github.Github(tkn)
+    repo = g.get_user().get_repo("data_depo")
     contents = repo.get_contents("contact.csv", ref="main")
 
     repo.update_file("contact.csv", "update otp activty",
@@ -123,8 +81,8 @@ def update_only_otp_to_user(mob, otp):
     :return: None
     '''
 
-    g = github.Github('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')
-    repo = g.get_user().get_repo("baseoca_backoffice")
+    g = github.Github(tkn)
+    repo = g.get_user().get_repo("data_depo")
     contents = repo.get_contents("contact.csv", ref="main")
 
     lines = contents.decoded_content.decode("utf-8")
@@ -150,34 +108,6 @@ def update_only_otp_to_user(mob, otp):
     repo.update_file("contact.csv", "update otp activty", updated_data, contents.sha, branch="main")
 
 
-def user_counter(mob):
-    g = github.Github('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')
-    repo = g.get_user().get_repo("shop35")
-    contents = repo.get_contents("mob_name.csv", ref="main")
-
-    lines = contents.decoded_content.decode("utf-8")
-    data_arr = lines.splitlines()
-    lookup = mob
-
-    for i in range(len(data_arr)):
-        ref_arr = data_arr[i].split(',')
-        if ref_arr[0] == lookup:
-            curr_arr = data_arr[i].split(',')
-            curr_arr[0] = lookup
-            curr_arr[1] = ref_arr[1]
-            curr_arr[2] = ref_arr[2]
-            curr_arr[3] = str(int(ref_arr[3]) + 1)
-            data_arr[i] = curr_arr[0] + ',' + curr_arr[1] + ',' + curr_arr[2] + ',' + curr_arr[3]
-            break
-
-    updated_data = ''
-    for i in range(len(data_arr)):
-        updated_data = updated_data + data_arr[i] + '\n'
-
-    # print(contents.decoded_content)
-    repo.update_file("mob_name.csv", "update otp activty", updated_data, contents.sha, branch="main")
-
-
 def check_otp_of_user(mob,otp):
 
     '''
@@ -192,8 +122,8 @@ def check_otp_of_user(mob,otp):
 
     # updating data post otp verification
 
-    g = github.Github('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')
-    repo = g.get_user().get_repo("baseoca_backoffice")
+    g = github.Github(tkn)
+    repo = g.get_user().get_repo("data_depo")
     contents = repo.get_contents("contact.csv", ref="main")
 
     lines = contents.decoded_content.decode("utf-8")
@@ -216,7 +146,7 @@ def check_otp_of_user(mob,otp):
         updated_data = updated_data + data_arr[i] + '\n'
 
     # print(contents.decoded_content)
-    repo.update_file("mob_name.csv", "update otp activity", updated_data, contents.sha, branch="main")
+    repo.update_file("contact.csv", "update otp activity", updated_data, contents.sha, branch="main")
     return True
 
 
