@@ -3,8 +3,10 @@ import urllib.request
 from random import randint
 import smtplib
 from email.mime.text import MIMEText
+import csv
 
-tkn ='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'
+from tempfile import NamedTemporaryFile
+import shutil
 
 
 
@@ -38,16 +40,19 @@ def check_mob_otp(mob, otp):
     :return: None
     '''
 
-    g = github.Github(tkn)
-    repo = g.get_user().get_repo("backoffice")
-    contents = repo.get_contents("contact.csv", ref="main")
+    with open('contact.csv', 'r') as file:
+        reader = csv.reader(file)
+        lookup = mob
+        mob_found = False
+        for row in reader:
+            if lookup in row:
+                update_only_otp_to_user(mob, otp)
+                mob_found = True
+                break
 
-    lookup = mob
+        if mob_found == False:
+            enter_mob(mob, otp)
 
-    if str(contents.decoded_content).find(lookup) == -1:
-        enter_mob(mob, otp)
-    else:
-        update_only_otp_to_user(mob, otp)
 
 
 def enter_mob(mob, otp):
@@ -60,13 +65,9 @@ def enter_mob(mob, otp):
     :return: None
     '''
 
-    g = github.Github(tkn)
-    repo = g.get_user().get_repo("backoffice")
-    contents = repo.get_contents("contact.csv", ref="main")
-
-    repo.update_file("contact.csv", "update otp activty",
-                     contents.decoded_content.decode("utf-8") + "" + str(mob) + "," + str(otp) + ",0\n",
-                     contents.sha, branch="main")
+    with open('contact.csv', 'a', newline='\n') as f:
+        writer = csv.writer(f)
+        writer.writerow([mob, otp, 0])
 
 
 def update_only_otp_to_user(mob, otp):
@@ -81,31 +82,22 @@ def update_only_otp_to_user(mob, otp):
     :return: None
     '''
 
-    g = github.Github(tkn)
-    repo = g.get_user().get_repo("backoffice")
-    contents = repo.get_contents("contact.csv", ref="main")
+    lines = list()
+    with open('contact.csv', 'r') as readFile:
+        reader = csv.reader(readFile)
+        for row in reader:
+            lines.append(row)
+            for field in row:
+                if field[0] == mob:
+                    lines.remove(row)
 
-    lines = contents.decoded_content.decode("utf-8")
-    data_arr = lines.splitlines()
-    lookup = mob
-    otp = otp
-
-    for i in range(len(data_arr)):
-        ref_arr = data_arr[i].split(',')
-        if ref_arr[0] == lookup:
-            curr_arr = data_arr[i].split(',')
-            curr_arr[0] = lookup
-            curr_arr[1] = otp
-            curr_arr[2] = int(ref_arr[-1])+1
-            data_arr[i] = str(curr_arr[0]) + ',' + str(curr_arr[1]) + ',' + str(curr_arr[2])
-            break
-
-    updated_data = ''
-    for i in range(len(data_arr)):
-        updated_data = updated_data + data_arr[i] + '\n'
-
-    # print(contents.decoded_content)
-    repo.update_file("contact.csv", "update otp activty", updated_data, contents.sha, branch="main")
+    with open('contact.csv', 'w' ,newline='\n') as writeFile:
+        writer = csv.writer(writeFile)
+        for i in range(len(lines)):
+            if lines[i][0]!=mob:
+                writer.writerow([lines[i][0], lines[i][1], lines[i][2]])
+            else:
+                writer.writerow([mob, otp, 0])
 
 
 def check_otp_of_user(mob,otp):
@@ -120,34 +112,15 @@ def check_otp_of_user(mob,otp):
 
     '''
 
-    # updating data post otp verification
-
-    g = github.Github(tkn)
-    repo = g.get_user().get_repo("backoffice")
-    contents = repo.get_contents("contact.csv", ref="main")
-
-    lines = contents.decoded_content.decode("utf-8")
-    data_arr = lines.splitlines()
-    lookup = mob
-
-    for i in range(len(data_arr)):
-        ref_arr = data_arr[i].split(',')
-        if ref_arr[0] == lookup:
-            curr_arr = data_arr[i].split(',')
-            curr_arr[0] = lookup
-            if int(curr_arr[1]) == int(otp):
-                return True
-            else:
-                return False
-            break
-
-    updated_data = ''
-    for i in range(len(data_arr)):
-        updated_data = updated_data + data_arr[i] + '\n'
-
-    # print(contents.decoded_content)
-    repo.update_file("contact.csv", "update otp activity", updated_data, contents.sha, branch="main")
-    return True
+    with open('contact.csv', 'r') as file:
+        reader = csv.reader(file)
+        lookup = mob
+        for row in reader:
+            if lookup in row:
+                if row[1] == otp:
+                    return True
+                else:
+                    return False
 
 
 
