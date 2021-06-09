@@ -4,7 +4,7 @@ import order_mgr
 import streamlit as st
 import SessionState
 
-st.set_page_config(page_title ='Shop35')
+st.set_page_config(page_title ='Baseoca')
 
 # st.markdown(""" <style>
 # #MainMenu {visibility: hidden;}
