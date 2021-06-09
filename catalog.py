@@ -23,7 +23,7 @@ def main(session_state):
     start_time = time.time()
 
     st.sidebar.header('Order Details')
-    st.title('SHOP35')
+    st.title('Baseoca')
     st.subheader('  ')
 
 
