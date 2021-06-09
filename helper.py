@@ -4,7 +4,7 @@ from random import randint
 import smtplib
 from email.mime.text import MIMEText
 
-tkn ='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'
+tkn ='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'
 
 
 
@@ -39,7 +39,7 @@ def check_mob_otp(mob, otp):
     '''
 
     g = github.Github(tkn)
-    repo = g.get_user().get_repo("data_depo")
+    repo = g.get_user().get_repo("backoffice")
     contents = repo.get_contents("contact.csv", ref="main")
 
     lookup = mob
@@ -61,7 +61,7 @@ def enter_mob(mob, otp):
     '''
 
     g = github.Github(tkn)
-    repo = g.get_user().get_repo("data_depo")
+    repo = g.get_user().get_repo("backoffice")
     contents = repo.get_contents("contact.csv", ref="main")
 
     repo.update_file("contact.csv", "update otp activty",
@@ -82,7 +82,7 @@ def update_only_otp_to_user(mob, otp):
     '''
 
     g = github.Github(tkn)
-    repo = g.get_user().get_repo("data_depo")
+    repo = g.get_user().get_repo("backoffice")
     contents = repo.get_contents("contact.csv", ref="main")
 
     lines = contents.decoded_content.decode("utf-8")
@@ -123,7 +123,7 @@ def check_otp_of_user(mob,otp):
     # updating data post otp verification
 
     g = github.Github(tkn)
-    repo = g.get_user().get_repo("data_depo")
+    repo = g.get_user().get_repo("backoffice")
     contents = repo.get_contents("contact.csv", ref="main")
 
     lines = contents.decoded_content.decode("utf-8")
