@@ -4,7 +4,7 @@ from random import randint
 import smtplib
 from email.mime.text import MIMEText
 
-tkn ='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'
+tkn ='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'
 
 
 
